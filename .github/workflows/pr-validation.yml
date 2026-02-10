@@ -1,0 +1,84 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+
+jobs:
+  lint-sql:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install sqlfluff
+        run: pip install sqlfluff
+
+      - name: Lint SQL files
+        run: |
+          sqlfluff lint deploy/*.sql --dialect snowflake || true
+          sqlfluff lint tests/*.sql --dialect snowflake || true
+
+  dry-run-deploy:
+    runs-on: ubuntu-latest
+    needs: lint-sql
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SnowSQL
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.28-linux_x86_64.bash
+          SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.28-linux_x86_64.bash
+
+      - name: Create PR test database
+        run: |
+          PR_DB="PR_${{ github.event.pull_request.number }}"
+          ~/bin/snowsql \
+            -D DB_PREFIX=$PR_DB \
+            -f deploy/01_setup_infrastructure.sql \
+            -o exit_on_error=true \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
+
+      - name: Deploy to PR database
+        run: |
+          PR_DB="PR_${{ github.event.pull_request.number }}"
+          for script in 02 03 04 05 06 07; do
+            ~/bin/snowsql \
+              -D DB_PREFIX=$PR_DB \
+              -f deploy/${script}_*.sql \
+              -o exit_on_error=true \
+              --accountname $SNOWFLAKE_ACCOUNT \
+              --username $SNOWFLAKE_USER \
+              --password $SNOWFLAKE_PASSWORD
+          done
+
+      - name: Run tests on PR database
+        run: |
+          PR_DB="PR_${{ github.event.pull_request.number }}"
+          ~/bin/snowsql \
+            -D DB_PREFIX=$PR_DB \
+            -f tests/run_tests.sql \
+            -o exit_on_error=true \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
+
+      - name: Cleanup PR database
+        if: always()
+        run: |
+          PR_DB="PR_${{ github.event.pull_request.number }}"
+          ~/bin/snowsql \
+            -q "DROP DATABASE IF EXISTS ${PR_DB}_VISIT_DEMO_DB; DROP WAREHOUSE IF EXISTS ${PR_DB}_VISIT_DEMO_WH;" \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
