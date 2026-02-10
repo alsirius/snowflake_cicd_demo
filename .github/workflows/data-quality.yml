@@ -16,9 +16,9 @@ on:
           - PROD
 
 env:
-  SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-  SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-  SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+  SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
 
 jobs:
   data-quality-tests:
@@ -40,10 +40,7 @@ jobs:
           ~/bin/snowsql \
             -D DB_PREFIX=${{ matrix.environment }} \
             -f tests/test_data_quality.sql \
-            -o output_format=plain \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o output_format=plain
         continue-on-error: true
 
       - name: Upload test results

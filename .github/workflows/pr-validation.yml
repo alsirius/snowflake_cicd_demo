@@ -7,9 +7,9 @@ on:
       - develop
 
 env:
-  SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-  SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-  SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+  SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
 
 jobs:
   lint-sql:
@@ -44,10 +44,7 @@ jobs:
           ~/bin/snowsql \
             -D DB_PREFIX=$PR_DB \
             -f deploy/01_setup_infrastructure.sql \
-            -o exit_on_error=true \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o exit_on_error=true
 
       - name: Deploy to PR database
         run: |
@@ -56,10 +53,7 @@ jobs:
             ~/bin/snowsql \
               -D DB_PREFIX=$PR_DB \
               -f deploy/${script}_*.sql \
-              -o exit_on_error=true \
-              --accountname $SNOWFLAKE_ACCOUNT \
-              --username $SNOWFLAKE_USER \
-              --password $SNOWFLAKE_PASSWORD
+              -o exit_on_error=true
           done
 
       - name: Run tests on PR database
@@ -68,17 +62,11 @@ jobs:
           ~/bin/snowsql \
             -D DB_PREFIX=$PR_DB \
             -f tests/run_tests.sql \
-            -o exit_on_error=true \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o exit_on_error=true
 
       - name: Cleanup PR database
         if: always()
         run: |
           PR_DB="PR_${{ github.event.pull_request.number }}"
           ~/bin/snowsql \
-            -q "DROP DATABASE IF EXISTS ${PR_DB}_VISIT_DEMO_DB; DROP WAREHOUSE IF EXISTS ${PR_DB}_VISIT_DEMO_WH;" \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -q "DROP DATABASE IF EXISTS ${PR_DB}_VISIT_DEMO_DB; DROP WAREHOUSE IF EXISTS ${PR_DB}_VISIT_DEMO_WH;"

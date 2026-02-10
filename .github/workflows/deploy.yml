@@ -22,11 +22,11 @@ on:
           - PROD
 
 env:
-  SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-  SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-  SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-  SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
-  SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+  SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+  SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+  SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
 
 jobs:
   set-environment:
@@ -70,10 +70,7 @@ jobs:
             echo "Validating: $file"
             ~/bin/snowsql -q "SELECT 'Syntax check: $file'" \
               -o exit_on_error=true \
-              -o output_format=plain \
-              --accountname $SNOWFLAKE_ACCOUNT \
-              --username $SNOWFLAKE_USER \
-              --password $SNOWFLAKE_PASSWORD
+              -o output_format=plain
           done
 
   test:
@@ -96,10 +93,7 @@ jobs:
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
             -f tests/run_tests.sql \
-            -o exit_on_error=true \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o exit_on_error=true
 
   deploy:
     runs-on: ubuntu-latest
@@ -125,70 +119,49 @@ jobs:
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
             -f deploy/01_setup_infrastructure.sql \
-            -o exit_on_error=true \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o exit_on_error=true
 
       - name: Deploy RAW layer
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
             -f deploy/02_create_raw_tables.sql \
-            -o exit_on_error=true \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o exit_on_error=true
 
       - name: Deploy INT layer
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
             -f deploy/03_create_int_tables.sql \
-            -o exit_on_error=true \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o exit_on_error=true
 
       - name: Deploy procedures
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
             -f deploy/04_create_procedures.sql \
-            -o exit_on_error=true \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o exit_on_error=true
 
       - name: Deploy tasks
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
             -f deploy/05_create_tasks.sql \
-            -o exit_on_error=true \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o exit_on_error=true
 
       - name: Deploy views
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
             -f deploy/06_create_views.sql \
-            -o exit_on_error=true \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o exit_on_error=true
 
       - name: Deploy data generator
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
             -f deploy/07_create_data_generator.sql \
-            -o exit_on_error=true \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o exit_on_error=true
 
       - name: Enable tasks (non-PROD only)
         if: needs.set-environment.outputs.env_name != 'PROD'
@@ -196,10 +169,7 @@ jobs:
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
             -f deploy/08_enable_tasks.sql \
-            -o exit_on_error=true \
-            --accountname $SNOWFLAKE_ACCOUNT \
-            --username $SNOWFLAKE_USER \
-            --password $SNOWFLAKE_PASSWORD
+            -o exit_on_error=true
 
       - name: Deployment complete
         run: |
