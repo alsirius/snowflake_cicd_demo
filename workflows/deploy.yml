@@ -1,0 +1,207 @@
+name: Deploy to Snowflake
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'DEV'
+        type: choice
+        options:
+          - DEV
+          - TEST
+          - PROD
+
+env:
+  SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+  SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+  SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+
+jobs:
+  set-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      env_name: ${{ steps.set-env.outputs.env_name }}
+      db_prefix: ${{ steps.set-env.outputs.db_prefix }}
+    steps:
+      - name: Set environment based on trigger
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "env_name=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "db_prefix=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "env_name=PROD" >> $GITHUB_OUTPUT
+            echo "db_prefix=PROD" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "env_name=TEST" >> $GITHUB_OUTPUT
+            echo "db_prefix=TEST" >> $GITHUB_OUTPUT
+          else
+            echo "env_name=DEV" >> $GITHUB_OUTPUT
+            echo "db_prefix=DEV" >> $GITHUB_OUTPUT
+          fi
+
+  validate:
+    runs-on: ubuntu-latest
+    needs: set-environment
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SnowSQL
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.28-linux_x86_64.bash
+          SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.28-linux_x86_64.bash
+
+      - name: Validate SQL syntax
+        run: |
+          for file in deploy/*.sql; do
+            echo "Validating: $file"
+            ~/bin/snowsql -q "SELECT 'Syntax check: $file'" \
+              -o exit_on_error=true \
+              -o output_format=plain \
+              --accountname $SNOWFLAKE_ACCOUNT \
+              --username $SNOWFLAKE_USER \
+              --password $SNOWFLAKE_PASSWORD
+          done
+
+  test:
+    runs-on: ubuntu-latest
+    needs: [set-environment, validate]
+    if: github.event_name == 'pull_request' || needs.set-environment.outputs.env_name != 'PROD'
+    env:
+      DB_PREFIX: ${{ needs.set-environment.outputs.db_prefix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SnowSQL
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.28-linux_x86_64.bash
+          SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.28-linux_x86_64.bash
+
+      - name: Run tests
+        run: |
+          ~/bin/snowsql \
+            -D DB_PREFIX=$DB_PREFIX \
+            -f tests/run_tests.sql \
+            -o exit_on_error=true \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [set-environment, validate, test]
+    if: |
+      always() && 
+      needs.validate.result == 'success' && 
+      (needs.test.result == 'success' || needs.test.result == 'skipped')
+    environment: ${{ needs.set-environment.outputs.env_name }}
+    env:
+      DB_PREFIX: ${{ needs.set-environment.outputs.db_prefix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SnowSQL
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.28-linux_x86_64.bash
+          SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.28-linux_x86_64.bash
+
+      - name: Deploy infrastructure
+        run: |
+          ~/bin/snowsql \
+            -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/01_setup_infrastructure.sql \
+            -o exit_on_error=true \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
+
+      - name: Deploy RAW layer
+        run: |
+          ~/bin/snowsql \
+            -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/02_create_raw_tables.sql \
+            -o exit_on_error=true \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
+
+      - name: Deploy INT layer
+        run: |
+          ~/bin/snowsql \
+            -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/03_create_int_tables.sql \
+            -o exit_on_error=true \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
+
+      - name: Deploy procedures
+        run: |
+          ~/bin/snowsql \
+            -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/04_create_procedures.sql \
+            -o exit_on_error=true \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
+
+      - name: Deploy tasks
+        run: |
+          ~/bin/snowsql \
+            -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/05_create_tasks.sql \
+            -o exit_on_error=true \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
+
+      - name: Deploy views
+        run: |
+          ~/bin/snowsql \
+            -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/06_create_views.sql \
+            -o exit_on_error=true \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
+
+      - name: Deploy data generator
+        run: |
+          ~/bin/snowsql \
+            -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/07_create_data_generator.sql \
+            -o exit_on_error=true \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
+
+      - name: Enable tasks (non-PROD only)
+        if: needs.set-environment.outputs.env_name != 'PROD'
+        run: |
+          ~/bin/snowsql \
+            -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/08_enable_tasks.sql \
+            -o exit_on_error=true \
+            --accountname $SNOWFLAKE_ACCOUNT \
+            --username $SNOWFLAKE_USER \
+            --password $SNOWFLAKE_PASSWORD
+
+      - name: Deployment complete
+        run: |
+          echo "✅ Deployed to ${{ needs.set-environment.outputs.env_name }} environment"
+          echo "Database: ${{ env.DB_PREFIX }}_VISIT_DEMO_DB"
