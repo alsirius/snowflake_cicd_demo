@@ -35,6 +35,10 @@ jobs:
 
       - name: Install SnowSQL
         run: |
+          # Install dependencies first
+          sudo apt-get update
+          sudo apt-get install -y libssl1.1 libssl-dev libcrypto++-dev
+          # Install SnowSQL
           curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.28-linux_x86_64.bash
           SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.28-linux_x86_64.bash
 
@@ -43,6 +47,8 @@ jobs:
           PR_DB="PR_${{ github.event.pull_request.number }}"
           ~/bin/snowsql \
             -D DB_PREFIX=$PR_DB \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f deploy/01_setup_infrastructure.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
@@ -55,6 +61,8 @@ jobs:
           for script in 02 03 04 05 06 07; do
             ~/bin/snowsql \
               -D DB_PREFIX=$PR_DB \
+              -o variable_substitution=true \
+              -f deploy/00_env_config.sql \
               -f deploy/${script}_*.sql \
               -o exit_on_error=true \
               --accountname $SNOWFLAKE_ACCOUNT \
@@ -67,6 +75,8 @@ jobs:
           PR_DB="PR_${{ github.event.pull_request.number }}"
           ~/bin/snowsql \
             -D DB_PREFIX=$PR_DB \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f tests/run_tests.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
