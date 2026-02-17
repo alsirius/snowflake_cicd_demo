@@ -68,9 +68,13 @@ jobs:
         run: |
           for file in deploy/*.sql; do
             echo "Validating: $file"
-            ~/bin/snowsql -q "SELECT 'Syntax check: $file'" \
+            ~/bin/snowsql \
+              -D DB_PREFIX=TEST \
+              -o variable_substitution=true \
               -o exit_on_error=true \
               -o output_format=plain \
+              -f deploy/00_env_config.sql \
+              -f "$file" \
               --accountname $SNOWFLAKE_ACCOUNT \
               --username $SNOWFLAKE_USER \
               --password $SNOWFLAKE_PASSWORD
@@ -95,6 +99,8 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f tests/run_tests.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
@@ -124,6 +130,8 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f deploy/01_setup_infrastructure.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
@@ -134,6 +142,8 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f deploy/02_create_raw_tables.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
@@ -144,6 +154,8 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f deploy/03_create_int_tables.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
@@ -154,6 +166,8 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f deploy/04_create_procedures.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
@@ -164,6 +178,8 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f deploy/05_create_tasks.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
@@ -174,6 +190,8 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f deploy/06_create_views.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
@@ -184,6 +202,8 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f deploy/07_create_data_generator.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
@@ -195,6 +215,8 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f deploy/08_enable_tasks.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \

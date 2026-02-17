@@ -43,6 +43,8 @@ jobs:
           PR_DB="PR_${{ github.event.pull_request.number }}"
           ~/bin/snowsql \
             -D DB_PREFIX=$PR_DB \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f deploy/01_setup_infrastructure.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
@@ -55,6 +57,8 @@ jobs:
           for script in 02 03 04 05 06 07; do
             ~/bin/snowsql \
               -D DB_PREFIX=$PR_DB \
+              -o variable_substitution=true \
+              -f deploy/00_env_config.sql \
               -f deploy/${script}_*.sql \
               -o exit_on_error=true \
               --accountname $SNOWFLAKE_ACCOUNT \
@@ -67,6 +71,8 @@ jobs:
           PR_DB="PR_${{ github.event.pull_request.number }}"
           ~/bin/snowsql \
             -D DB_PREFIX=$PR_DB \
+            -o variable_substitution=true \
+            -f deploy/00_env_config.sql \
             -f tests/run_tests.sql \
             -o exit_on_error=true \
             --accountname $SNOWFLAKE_ACCOUNT \
