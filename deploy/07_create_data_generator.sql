@@ -16,12 +16,13 @@ AS
 $$
 BEGIN
     INSERT INTO RAW.SITE_DIM_RAW (
-        SHOPPERTRAK_SITE_ID, SITE_NAME, BOROUGH, ADDRESS, CITY, STATE, POSTCODE, LAT, LON, _RAW_HASH
+        SHOPPERTRAK_SITE_ID, SITE_NAME, BOROUGH, ADDRESS, CITY, STATE, POSTCODE, LAT, LON, SITE_CATEGORY, _RAW_HASH
     )
     SELECT
         'NY_LIB_' || LPAD(seq4()::STRING, 3, '0') AS SHOPPERTRAK_SITE_ID,
         'Library Branch ' || LPAD(seq4()::STRING, 3, '0') AS SITE_NAME,
         borough, address, 'New York' AS CITY, 'NY' AS STATE, postcode, lat, lon,
+        'Library' AS SITE_CATEGORY,  -- NEW: Category for all library sites
         MD5('NY_LIB_' || LPAD(seq4()::STRING, 3, '0') || '|' || borough || '|' || lat::STRING || '|' || lon::STRING) AS _RAW_HASH
     FROM (
         SELECT column1::STRING AS borough, column2::STRING AS address, column3::STRING AS postcode,
