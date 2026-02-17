@@ -1,0 +1,41 @@
+name: Deploy to Snowflake
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'DEV'
+        type: choice
+        options:
+          - DEV
+          - TEST
+          - PROD
+
+env:
+  SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+  SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+  SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DB_PREFIX: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment
+        run: |
+          echo "Deploying to ${{ github.event.inputs.environment }} environment"
+          echo "DB_PREFIX=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+
+      - name: Deploy infrastructure
+        run: |
+          echo "Manual deployment to ${{ github.event.inputs.environment }}"
+          echo "This would deploy the complete pipeline"
+          echo "Database: ${{ env.DB_PREFIX }}_VISIT_DEMO_17F_DB"

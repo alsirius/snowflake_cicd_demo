@@ -1,0 +1,52 @@
+name: Run Data Quality Tests
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6 AM UTC
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'DEV'
+        type: choice
+        options:
+          - DEV
+          - TEST
+          - PROD
+
+env:
+  SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+
+jobs:
+  data-quality-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [DEV, TEST, PROD]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SnowSQL
+        run: |
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.28-linux_x86_64.bash
+          SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.28-linux_x86_64.bash
+
+      - name: Run DQ tests for ${{ matrix.environment }}
+        run: |
+          ~/bin/snowsql \
+            -D DB_PREFIX=${{ matrix.environment }} \
+            -f deploy/00_env_config.sql \
+            -f tests/test_data_quality.sql \
+            -o output_format=plain
+        continue-on-error: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dq-results-${{ matrix.environment }}
+          path: tests/results/
+          retention-days: 30

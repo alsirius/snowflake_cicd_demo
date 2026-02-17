@@ -1,0 +1,40 @@
+-- =============================================================================
+-- 03_CREATE_INT_TABLES.SQL
+-- Creates INT layer tables (Silver) and merge procedures
+-- =============================================================================
+
+-- Config loaded from 00_env_config.sql
+USE DATABASE IDENTIFIER($DB_NAME);
+USE SCHEMA INT;
+
+CREATE TABLE IF NOT EXISTS INT.DIM_SITE (
+    SHOPPERTRAK_SITE_ID VARCHAR(50) NOT NULL,
+    SITE_NAME VARCHAR,
+    BOROUGH VARCHAR,
+    ADDRESS VARCHAR,
+    CITY VARCHAR,
+    STATE VARCHAR,
+    POSTCODE VARCHAR,
+    LAT NUMBER(9,6),
+    LON NUMBER(9,6),
+    SITE_CATEGORY VARCHAR(50),  -- NEW: Category of site (retail, office, restaurant, etc.)
+    _EFFECTIVE_TS TIMESTAMP_TZ NOT NULL,
+    _LOAD_TS TIMESTAMP_TZ NOT NULL,
+    _RAW_HASH VARCHAR NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS INT.FACT_HOURLY_VISITS (
+    SHOPPERTRAK_SITE_ID VARCHAR(50) NOT NULL,
+    ORBIT INT,
+    INCREMENT_DATE DATE NOT NULL,
+    INCREMENT_HOUR NUMBER(38,0) NOT NULL,
+    ENTERS NUMBER(38,0) NOT NULL,
+    EXITS NUMBER(38,0) NOT NULL,
+    NET_VISITS NUMBER(38,0) NOT NULL,
+    IS_HEALTHY BOOLEAN,
+    _LOAD_TS TIMESTAMP_TZ NOT NULL,
+    _RAW_HASH VARCHAR NOT NULL,
+    CONSTRAINT PK_FACT UNIQUE (SHOPPERTRAK_SITE_ID, INCREMENT_DATE, INCREMENT_HOUR)
+);
+
+SELECT 'INT tables created for ' || $DB_NAME AS status;

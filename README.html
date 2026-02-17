@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snowflake Visits Pipeline Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(105deg, #f5427e 0%, #62defa 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(240,240,255,0.9));
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b9d, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #ff6b9d, #c44569);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin: 5px;
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(240,240,255,0.95));
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 
+                        0 0 20px rgba(255, 107, 157, 0.1),
+                        inset 0 0 10px rgba(255, 255, 255, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15), 
+                        0 0 30px rgba(255, 107, 157, 0.2),
+                        inset 0 0 15px rgba(255, 255, 255, 0.7);
+        }
+        
+        .card h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 3px solid #4ecdc4;
+            padding-bottom: 10px;
+        }
+        
+        .card h3 {
+            color: #34495e;
+            margin: 20px 0 10px 0;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .architecture-diagram {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .layer {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .bronze { background: linear-gradient(45deg, #cd7f32, #b87333); }
+        .silver { background: linear-gradient(45deg, #c0c0c0, #a8a8a8); }
+        .gold { background: linear-gradient(45deg, #ffd700, #ffed4e); color: #333; }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .feature-list li:before {
+            content: "✓ ";
+            color: #ff6b9d;
+            font-weight: bold;
+        }
+        
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        
+        .highlight {
+            background: linear-gradient(45deg, #ff6b9d, #c44569);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat {
+            background: linear-gradient(45deg, #ff6b9d, #4ecdc4);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(255, 107, 157, 0.3);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .workflow-step {
+            background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+            border-left: 4px solid #4ecdc4;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 10px rgba(78, 205, 196, 0.1);
+        }
+        
+        footer {
+            background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(240,240,255,0.9));
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Snowflake Visits Pipeline Demo</h1>
+            <p class="subtitle">Enterprise-Grade Data Pipeline with Modern Architecture</p>
+            <div>
+                <span class="badge">Snowflake</span>
+                <span class="badge">CI/CD</span>
+                <span class="badge">Real-time</span>
+                <span class="badge">Medallion Architecture</span>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="card full-width">
+                <h2>◆ What This Demo Demonstrates</h2>
+                <p>This is a <span class="highlight">complete, production-ready</span> data pipeline that showcases modern data engineering practices using Snowflake's cloud data platform. The demo processes retail foot traffic data from NYC libraries to demonstrate real-world data pipeline patterns.</p>
+                
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-number">4</div>
+                        <div>Data Layers</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">12</div>
+                        <div>Library Sites</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">3</div>
+                        <div>Environments</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">5</div>
+                        <div>Boroughs</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>◆ Architecture Overview</h2>
+                <div class="architecture-diagram">
+                    <div class="layer bronze">RAW (Bronze)</div>
+                    <div class="layer silver">INT (Silver)</div>
+                    <div class="layer gold">PRS (Gold)</div>
+                </div>
+                
+                <h3>Medallion Architecture Layers:</h3>
+                <ul class="feature-list">
+                    <li><strong>RAW Layer:</strong> Raw ingested data with streams for change detection</li>
+                    <li><strong>INT Layer:</strong> Cleaned, validated, and modeled data</li>
+                    <li><strong>PRS Layer:</strong> Business-ready views and analytics</li>
+                    <li><strong>COMMON Layer:</strong> Shared configurations and utilities</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>◆ Key Features</h2>
+                <ul class="feature-list">
+                    <li><strong>Automated Data Ingestion:</strong> Stream-based change detection</li>
+                    <li><strong>Real-time Processing:</strong> Snowflake Tasks for scheduled execution</li>
+                    <li><strong>Data Quality:</strong> Built-in validation and health checks</li>
+                    <li><strong>Change Data Capture:</strong> Hash-based deduplication</li>
+                    <li><strong>SCD Type 2:</strong> Slowly changing dimensions handling</li>
+                    <li><strong>Automated Testing:</strong> Comprehensive test suite</li>
+                    <li><strong>CI/CD Pipeline:</strong> GitHub Actions for deployment</li>
+                    <li><strong>Multi-Environment:</strong> DEV, TEST, PROD support</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>◆ Data Model</h2>
+                <h3>Core Entities:</h3>
+                <ul class="feature-list">
+                    <li><strong>Site Dimension:</strong> NYC Library locations with geographic data</li>
+                    <li><strong>Hourly Visits:</strong> Foot traffic metrics (enters, exits, net visits)</li>
+                    <li><strong>Health Metrics:</strong> Data quality indicators</li>
+                    <li><strong>Temporal Data:</strong> Hourly increments with timestamps</li>
+                </ul>
+                
+                <h3>Analytics Views:</h3>
+                <ul class="feature-list">
+                    <li>Hourly enriched visit data</li>
+                    <li>Daily site aggregations</li>
+                    <li>Borough-level summaries</li>
+                    <li>Health rate analytics</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>◆ Pipeline Workflow</h2>
+                <div class="workflow-step">
+                    <strong>1. Data Generation:</strong> Simulates real-time foot traffic data
+                </div>
+                <div class="workflow-step">
+                    <strong>2. Stream Detection:</strong> Automatic change detection via Snowflake streams
+                </div>
+                <div class="workflow-step">
+                    <strong>3. Dimension Processing:</strong> Site dimension updates with SCD Type 2
+                </div>
+                <div class="workflow-step">
+                    <strong>4. Fact Processing:</strong> Visit data validation and enrichment
+                </div>
+                <div class="workflow-step">
+                    <strong>5. View Materialization:</strong> Business-ready analytics views
+                </div>
+                <div class="workflow-step">
+                    <strong>6. Quality Assurance:</strong> Automated testing and validation
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>◆ Deployment & Operations</h2>
+                <h3>Quick Start:</h3>
+                <div class="code-block">
+./scripts/deploy.sh DEV
+                </div>
+                
+                <h3>CI/CD Features:</h3>
+                <ul class="feature-list">
+                    <li>Automated SQL linting with sqlfluff</li>
+                    <li>Multi-environment deployment pipelines</li>
+                    <li>Pull request validation</li>
+                    <li>Data quality checks</li>
+                    <li>Automated testing suite</li>
+                </ul>
+                
+                <h3>Environment Strategy:</h3>
+                <ul class="feature-list">
+                    <li><strong>DEV:</strong> Full automation with demo data</li>
+                    <li><strong>TEST:</strong> Validation environment</li>
+                    <li><strong>PROD:</strong> Manual task activation</li>
+                </ul>
+            </div>
+
+            <div class="card full-width">
+                <h2>◆ Technical Implementation</h2>
+                <h3>Snowflake Features Demonstrated:</h3>
+                <ul class="feature-list">
+                    <li><strong>Streams:</strong> Change data capture for real-time processing</li>
+                    <li><strong>Tasks:</strong> Scheduled and dependent task execution</li>
+                    <li><strong>Procedures:</strong> Complex business logic encapsulation</li>
+                    <li><strong>Materialized Views:</strong> Performance optimization</li>
+                    <li><strong>Warehouse Management:</strong> Auto-suspend/resume for cost optimization</li>
+                    <li><strong>Security:</strong> Role-based access and execution contexts</li>
+                </ul>
+                
+                <h3>Best Practices Implemented:</h3>
+                <ul class="feature-list">
+                    <li>Medallion architecture pattern</li>
+                    <li>Hash-based change detection</li>
+                    <li>Comprehensive error handling</li>
+                    <li>Automated testing framework</li>
+                    <li>Infrastructure as code</li>
+                    <li>Environment parameterization</li>
+                </ul>
+            </div>
+
+            <div class="card full-width">
+                <h2>◆ Development Workflow & Setup</h2>
+                
+                <h3>Branching Strategy: Feature Branching</h3>
+                <p>We use <strong>feature branching</strong> to maintain code quality and enable parallel development:</p>
+                <ul class="feature-list">
+                    <li><strong>main:</strong> Production-ready code, automatically deployed to PROD</li>
+                    <li><strong>develop:</strong> Integration branch, automatically deployed to TEST</li>
+                    <li><strong>feature/*:</strong> Feature branches for new functionality</li>
+                    <li><strong>hotfix/*:</strong> Emergency fixes for production issues</li>
+                </ul>
+
+                <h3>Setup Instructions</h3>
+                <div class="workflow-step">
+                    <strong>1. Prerequisites:</strong> Install SnowSQL, Git, and configure GitHub secrets
+                </div>
+                <div class="code-block">
+# Install SnowSQL
+curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.28-linux_x86_64.bash
+SNOWSQL_DEST=~/bin SNOWSQL_LOGIN_SHELL=~/.profile bash snowsql-1.2.28-linux_x86_64.bash
+
+# Clone repository
+git clone https://github.com/alsirius/snowflake_cicd_demo.git
+cd snowflake_cicd_demo
+                </div>
+
+                <div class="workflow-step">
+                    <strong>2. Configure Environment:</strong> Set up Snowflake connection
+                </div>
+                <div class="code-block">
+# Configure SnowSQL
+snowsql -c connection_name -a &lt;account&gt; -u &lt;user&gt; -r &lt;role&gt; -w &lt;warehouse&gt; -d &lt;database&gt;
+                </div>
+
+                <div class="workflow-step">
+                    <strong>3. Local Development:</strong> Deploy to DEV environment
+                </div>
+                <div class="code-block">
+# Deploy to DEV
+./scripts/deploy.sh DEV
+
+# Run tests manually
+snowsql -D DB_PREFIX=DEV -f tests/run_tests.sql
+                </div>
+
+                <h3>Feature Development Process</h3>
+                <div class="workflow-step">
+                    <strong>1. Create Feature Branch:</strong> Start from develop branch
+                </div>
+                <div class="code-block">
+git checkout develop
+git pull origin develop
+git checkout -b feature/new-analytics-view
+                </div>
+
+                <div class="workflow-step">
+                    <strong>2. Make Changes:</strong> Modify SQL files, add tests
+                </div>
+                <div class="code-block">
+# Example: Add new view
+echo "CREATE OR REPLACE VIEW PRS.V_NEW_ANALYTICS AS..." >> deploy/06_create_views.sql
+
+# Add corresponding tests
+echo "-- Test new view" >> tests/test_data_quality.sql
+                </div>
+
+                <div class="workflow-step">
+                    <strong>3. Local Testing:</strong> Validate changes before commit
+                </div>
+                <div class="code-block">
+# Lint SQL files
+sqlfluff lint deploy/*.sql --dialect snowflake
+
+# Deploy to DEV for testing
+./scripts/deploy.sh DEV
+
+# Run comprehensive tests
+snowsql -D DB_PREFIX=DEV -f tests/run_tests.sql
+                </div>
+
+                <div class="workflow-step">
+                    <strong>4. Commit & Push:</strong> Commit with descriptive message
+                </div>
+                <div class="code-block">
+git add .
+git commit -m "feat: Add new analytics view for borough-level insights"
+git push origin feature/new-analytics-view
+                </div>
+
+                <h3>Pull Request Process</h3>
+                <div class="workflow-step">
+                    <strong>1. Create PR:</strong> Target develop branch
+                </div>
+                <ul class="feature-list">
+                    <li>Navigate to GitHub and create pull request</li>
+                    <li>Fill out PR template with description and testing notes</li>
+                    <li>Request review from team members</li>
+                </ul>
+
+                <div class="workflow-step">
+                    <strong>2. Automated PR Validation:</strong> GitHub Actions run automatically
+                </div>
+                <ul class="feature-list">
+                    <li><strong>SQL Linting:</strong> Code quality checks with sqlfluff</li>
+                    <li><strong>Syntax Validation:</strong> SQL syntax verification</li>
+                    <li><strong>Test Execution:</strong> Full test suite in TEST environment</li>
+                    <li><strong>Security Scans:</strong> Dependency and security checks</li>
+                </ul>
+
+                <div class="workflow-step">
+                    <strong>3. Review & Merge:</strong> Manual review followed by automated merge
+                </div>
+                <ul class="feature-list">
+                    <li>Team reviews code changes and test results</li>
+                    <li>Once approved, PR is merged to develop</li>
+                    <li>Automatic deployment to TEST environment triggers</li>
+                </ul>
+
+                <h3>Automated Workflows</h3>
+                <h4>DEV Environment (feature branches)</h4>
+                <ul class="feature-list">
+                    <li><strong>Trigger:</strong> Push to feature/* branches</li>
+                    <li><strong>Actions:</strong> SQL linting, syntax validation</li>
+                    <li><strong>Deployment:</strong> Manual deployment via script</li>
+                    <li><strong>Testing:</strong> Local test execution</li>
+                </ul>
+
+                <h4>TEST Environment (develop branch)</h4>
+                <ul class="feature-list">
+                    <li><strong>Trigger:</strong> Push to develop branch</li>
+                    <li><strong>Actions:</strong> Full validation, deployment, testing</li>
+                    <li><strong>Deployment:</strong> Automated deployment to TEST</li>
+                    <li><strong>Testing:</strong> Comprehensive test suite execution</li>
+                    <li><strong>Data:</strong> Sample data generation for validation</li>
+                </ul>
+
+                <h4>PROD Environment (main branch)</h4>
+                <ul class="feature-list">
+                    <li><strong>Trigger:</strong> Push to main branch (after develop → main merge)</li>
+                    <li><strong>Actions:</strong> Full validation, deployment</li>
+                    <li><strong>Deployment:</strong> Automated deployment to PROD</li>
+                    <li><strong>Tasks:</strong> Tasks remain suspended (manual activation)</li>
+                    <li><strong>Testing:</strong> Read-only validation tests</li>
+                </ul>
+
+                <h3>Simulating Changes & Features</h3>
+                <div class="workflow-step">
+                    <strong>1. Data Model Changes:</strong> Add new columns or tables
+                </div>
+                <div class="code-block">
+# Modify table structure
+ALTER TABLE RAW.HOURLY_VISITS_RAW ADD COLUMN NEW_METRIC NUMBER;
+
+# Update procedures to handle new column
+# Edit deploy/04_create_procedures.sql
+                </div>
+
+                <div class="workflow-step">
+                    <strong>2. Business Logic Changes:</strong> Update transformation rules
+                </div>
+                <div class="code-block">
+# Modify merge logic in procedures
+# Example: Change net visits calculation
+(ENTERS - EXITS)::NUMBER(38,0) AS NET_VISITS
+                </div>
+
+                <div class="workflow-step">
+                    <strong>3. New Analytics Views:</strong> Add business insights
+                </div>
+                <div class="code-block">
+# Add new view to deploy/06_create_views.sql
+CREATE OR REPLACE VIEW PRS.V_WEEKLY_TRENDS AS
+SELECT WEEK(INCREMENT_DATE), SUM(NET_VISITS)
+FROM PRS.V_HOURLY_VISITS_ENRICHED
+GROUP BY 1;
+                </div>
+
+                <h3>Environment-Specific Behaviors</h3>
+                <div class="workflow-step">
+                    <strong>DEV Environment:</strong> Full automation for development
+                </div>
+                <ul class="feature-list">
+                    <li>Tasks automatically enabled after deployment</li>
+                    <li>Demo data generation runs every 5 minutes</li>
+                    <li>Full test suite execution</li>
+                    <li>Debug logging enabled</li>
+                </ul>
+
+                <div class="workflow-step">
+                    <strong>TEST Environment:</strong> Validation and integration testing
+                </div>
+                <ul class="feature-list">
+                    <li>Tasks enabled for integration testing</li>
+                    <li>Controlled data generation</li>
+                    <li>Performance monitoring</li>
+                    <li>Staging for production validation</li>
+                </ul>
+
+                <div class="workflow-step">
+                    <strong>PROD Environment:</strong> Production-ready with safety controls
+                </div>
+                <ul class="feature-list">
+                    <li>Tasks suspended by default (manual activation)</li>
+                    <li>No automatic data generation</li>
+                    <li>Read-only validation tests</li>
+                    <li>Enhanced monitoring and alerting</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>◆ Business Value</h2>
+                <ul class="feature-list">
+                    <li><strong>Real-time Analytics:</strong> Immediate insights from fresh data</li>
+                    <li><strong>Data Quality:</strong> Automated validation ensures reliability</li>
+                    <li><strong>Cost Efficiency:</strong> Snowflake's auto-scaling reduces waste</li>
+                    <li><strong>Scalability:</strong> Handles growing data volumes seamlessly</li>
+                    <li><strong>Governance:</strong> Built-in data lineage and quality metrics</li>
+                    <li><strong>Agility:</strong> CI/CD enables rapid, safe deployments</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>◆ Testing & Quality</h2>
+                <h3>Automated Test Coverage:</h3>
+                <ul class="feature-list">
+                    <li>Infrastructure validation</li>
+                    <li>Schema existence checks</li>
+                    <li>Data generation verification</li>
+                    <li>Stream functionality testing</li>
+                    <li>Procedure execution validation</li>
+                    <li>View queryability tests</li>
+                    <li>Data quality assessments</li>
+                </ul>
+                
+                <div class="code-block">
+-- Run comprehensive test suite
+snowsql -f tests/run_tests.sql
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <h2>◆ Perfect For Demonstrating:</h2>
+            <p style="margin-bottom: 20px;">This demo is ideal for showcasing modern data engineering capabilities to stakeholders, training teams on Snowflake best practices, or as a template for production data pipelines.</p>
+            
+            <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                <span class="badge">Enterprise Ready</span>
+                <span class="badge">Production Template</span>
+                <span class="badge">Best Practices</span>
+                <span class="badge">Cost Optimized</span>
+                <span class="badge">Scalable Design</span>
+            </div>
+            
+            <p style="margin-top: 20px; color: #7f8c8d;">
+                <strong>Repository:</strong> github.com/alsirius/snowflake_cicd_demo<br>
+                <strong>Technologies:</strong> Snowflake, GitHub Actions, SQL, CI/CD<br>
+                <strong>Branching:</strong> Feature Branching Workflow<br>
+                <strong>Architecture:</strong> Medallion (Bronze-Silver-Gold)
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

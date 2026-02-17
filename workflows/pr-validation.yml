@@ -1,0 +1,20 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-sql:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install sqlfluff
+        run: pip install sqlfluff==2.3.5
+      
+      - name: Lint SQL files
+        run: |
+          sqlfluff lint deploy/ --dialect snowflake
