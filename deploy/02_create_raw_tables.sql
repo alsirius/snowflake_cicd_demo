@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS RAW.SITE_DIM_RAW (
     LAT NUMBER(9,6),
     LON NUMBER(9,6),
     SITE_CATEGORY VARCHAR(50),  -- NEW: Category of site (retail, office, restaurant, etc.)
+    SITE_STATUS VARCHAR(20) DEFAULT 'ACTIVE',  -- TEST: Site status for CI/CD demo
+    SITE_PRIORITY NUMBER(1) DEFAULT 5,  -- DEMO: Priority level (1-10, 5=default)
     _LOAD_TS TIMESTAMP_TZ(9) NOT NULL DEFAULT CURRENT_TIMESTAMP(),
     _RAW_HASH VARCHAR
 );
