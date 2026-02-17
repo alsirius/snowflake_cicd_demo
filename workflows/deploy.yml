@@ -5,10 +5,10 @@ on:
     branches:
       # - main  # Disabled to protect PROD data
       # - develop  # Deleted - using main only
-  pull_request:
-    branches:
-      - main
-      # - develop  # Deleted
+  # pull_request:  # Disabled - use pr-validation.yml instead
+  #   branches:
+  #     - main
+  #     # - develop  # Deleted
   workflow_dispatch:
     inputs:
       environment:
