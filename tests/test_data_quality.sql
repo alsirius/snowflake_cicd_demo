@@ -3,7 +3,7 @@
 -- Data quality tests for the pipeline
 -- =============================================================================
 
-SET DB_NAME = $DB_PREFIX || '_VISIT_DEMO_DB';
+-- Config loaded from 00_env_config.sql
 USE DATABASE IDENTIFIER($DB_NAME);
 
 -- DQ Test 1: No negative values in visits

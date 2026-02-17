@@ -43,6 +43,7 @@ jobs:
           PR_DB="PR_${{ github.event.pull_request.number }}"
           ~/bin/snowsql \
             -D DB_PREFIX=$PR_DB \
+            -f deploy/00_env_config.sql \
             -f deploy/01_setup_infrastructure.sql \
             -o exit_on_error=true
 
@@ -52,6 +53,7 @@ jobs:
           for script in 02 03 04 05 06 07; do
             ~/bin/snowsql \
               -D DB_PREFIX=$PR_DB \
+              -f deploy/00_env_config.sql \
               -f deploy/${script}_*.sql \
               -o exit_on_error=true
           done
@@ -61,6 +63,7 @@ jobs:
           PR_DB="PR_${{ github.event.pull_request.number }}"
           ~/bin/snowsql \
             -D DB_PREFIX=$PR_DB \
+            -f deploy/00_env_config.sql \
             -f tests/run_tests.sql \
             -o exit_on_error=true
 
@@ -69,4 +72,4 @@ jobs:
         run: |
           PR_DB="PR_${{ github.event.pull_request.number }}"
           ~/bin/snowsql \
-            -q "DROP DATABASE IF EXISTS ${PR_DB}_VISIT_DEMO_DB; DROP WAREHOUSE IF EXISTS ${PR_DB}_VISIT_DEMO_WH;"
+            -q "DROP DATABASE IF EXISTS ${PR_DB}_VISIT_DEMO_17F_DB; DROP WAREHOUSE IF EXISTS ${PR_DB}_VISIT_DEMO_17F_WH;"

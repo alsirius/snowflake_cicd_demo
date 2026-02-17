@@ -3,7 +3,7 @@
 -- Automated test suite for pipeline validation
 -- =============================================================================
 
-SET DB_NAME = $DB_PREFIX || '_VISIT_DEMO_DB';
+-- Config loaded from 00_env_config.sql
 USE DATABASE IDENTIFIER($DB_NAME);
 
 -- Test 1: Database exists

@@ -9,8 +9,8 @@ set -e
 
 ENV=${1:-DEV}
 DB_PREFIX=$ENV
-DB_NAME="${DB_PREFIX}_VISIT_DEMO_DB"
-WH_NAME="${DB_PREFIX}_VISIT_DEMO_WH"
+DB_NAME="${DB_PREFIX}_VISIT_DEMO_17F_DB"
+WH_NAME="${DB_PREFIX}_VISIT_DEMO_17F_WH"
 
 echo "=========================================="
 echo "⚠️  TEARDOWN: Removing $ENV environment"

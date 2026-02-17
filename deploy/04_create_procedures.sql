@@ -3,8 +3,7 @@
 -- Creates stored procedures for data processing
 -- =============================================================================
 
-SET DB_NAME = '&DB_PREFIX' || '_VISIT_DEMO2_DB';
-SET WH_NAME = '&DB_PREFIX' || '_VISIT_DEMO2_WH';
+-- Config loaded from 00_env_config.sql
 USE DATABASE IDENTIFIER($DB_NAME);
 
 -- Procedure: Merge site dimension data

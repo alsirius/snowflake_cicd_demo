@@ -3,7 +3,7 @@
 -- Disables all tasks (for cleanup or maintenance)
 -- =============================================================================
 
-SET DB_NAME = '&DB_PREFIX' || '_VISIT_DEMO2_DB';
+-- Config loaded from 00_env_config.sql
 USE DATABASE IDENTIFIER($DB_NAME);
 
 -- Disable in reverse order (parent first, then children)

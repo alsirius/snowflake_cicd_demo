@@ -4,6 +4,7 @@
 -- Run with: snowsql -f 01_setup_infrastructure.sql -D ENV=DEV -D DB_PREFIX=DEV
 -- =============================================================================
 
+
 SET DB_NAME = '&DB_PREFIX' || '_VISIT_DEMO2_DB';
 SET WH_NAME = '&DB_PREFIX' || '_VISIT_DEMO2_WH';
 

@@ -118,6 +118,7 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/00_env_config.sql \
             -f deploy/01_setup_infrastructure.sql \
             -o exit_on_error=true
 
@@ -125,6 +126,7 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/00_env_config.sql \
             -f deploy/02_create_raw_tables.sql \
             -o exit_on_error=true
 
@@ -132,6 +134,7 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/00_env_config.sql \
             -f deploy/03_create_int_tables.sql \
             -o exit_on_error=true
 
@@ -139,6 +142,7 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/00_env_config.sql \
             -f deploy/04_create_procedures.sql \
             -o exit_on_error=true
 
@@ -146,6 +150,7 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/00_env_config.sql \
             -f deploy/05_create_tasks.sql \
             -o exit_on_error=true
 
@@ -153,6 +158,7 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/00_env_config.sql \
             -f deploy/06_create_views.sql \
             -o exit_on_error=true
 
@@ -160,6 +166,7 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/00_env_config.sql \
             -f deploy/07_create_data_generator.sql \
             -o exit_on_error=true
 
@@ -168,10 +175,11 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=$DB_PREFIX \
+            -f deploy/00_env_config.sql \
             -f deploy/08_enable_tasks.sql \
             -o exit_on_error=true
 
       - name: Deployment complete
         run: |
           echo "✅ Deployed to ${{ needs.set-environment.outputs.env_name }} environment"
-          echo "Database: ${{ env.DB_PREFIX }}_VISIT_DEMO_DB"
+          echo "Database: ${{ env.DB_PREFIX }}_VISIT_DEMO_17F_DB"

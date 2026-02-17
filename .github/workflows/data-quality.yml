@@ -39,6 +39,7 @@ jobs:
         run: |
           ~/bin/snowsql \
             -D DB_PREFIX=${{ matrix.environment }} \
+            -f deploy/00_env_config.sql \
             -f tests/test_data_quality.sql \
             -o output_format=plain
         continue-on-error: true

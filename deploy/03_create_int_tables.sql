@@ -3,7 +3,7 @@
 -- Creates INT layer tables (Silver) and merge procedures
 -- =============================================================================
 
-SET DB_NAME = '&DB_PREFIX' || '_VISIT_DEMO2_DB';
+-- Config loaded from 00_env_config.sql
 USE DATABASE IDENTIFIER($DB_NAME);
 USE SCHEMA INT;
 
