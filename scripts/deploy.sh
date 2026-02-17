@@ -40,17 +40,17 @@ SCRIPTS=(
 
 for script in "${SCRIPTS[@]}"; do
     echo ">>> Deploying: $script"
-    snowsql -D DB_PREFIX=$DB_PREFIX -f "deploy/00_env_config.sql" -f "deploy/$script" -o exit_on_error=true
+    snowsql -D DB_PREFIX=$DB_PREFIX -o variable_substitution=true -f "deploy/00_env_config.sql" -f "deploy/$script" -o exit_on_error=true
 done
 
 # Run tests
 echo ">>> Running tests..."
-snowsql -D DB_PREFIX=$DB_PREFIX -f "deploy/00_env_config.sql" -f "tests/run_tests.sql" -o exit_on_error=true
+snowsql -D DB_PREFIX=$DB_PREFIX -o variable_substitution=true -f "deploy/00_env_config.sql" -f "tests/run_tests.sql" -o exit_on_error=true
 
 # Enable tasks only for non-PROD
 if [[ "$ENV" != "PROD" ]]; then
     echo ">>> Enabling tasks and loading demo data..."
-    snowsql -D DB_PREFIX=$DB_PREFIX -f "deploy/00_env_config.sql" -f "deploy/08_enable_tasks.sql" -o exit_on_error=true
+    snowsql -D DB_PREFIX=$DB_PREFIX -o variable_substitution=true -f "deploy/00_env_config.sql" -f "deploy/08_enable_tasks.sql" -o exit_on_error=true
 else
     echo ">>> PROD: Tasks remain suspended. Enable manually after validation."
 fi
