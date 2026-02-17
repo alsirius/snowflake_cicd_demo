@@ -3,12 +3,12 @@ name: Deploy to Snowflake
 on:
   push:
     branches:
-      - main
-      - develop
+      # - main  # Disabled to protect PROD data
+      # - develop  # Deleted - using main only
   pull_request:
     branches:
       - main
-      - develop
+      # - develop  # Deleted
   workflow_dispatch:
     inputs:
       environment:
